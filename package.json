@@ -1,0 +1,33 @@
+{
+  "name": "edwin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EDWIN - motion graphics profile reveal",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render Edwin out/edwin.mp4",
+    "poster": "remotion still Edwin out/edwin-poster.png --frame=1439",
+    "assets": "python scripts/prepare_assets.py",
+    "sfx": "node scripts/sfx.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.540",
+    "@remotion/google-fonts": "4.0.540",
+    "@remotion/layout-utils": "4.0.540",
+    "@remotion/media": "4.0.540",
+    "@remotion/motion-blur": "4.0.540",
+    "@remotion/noise": "4.0.540",
+    "@remotion/paths": "4.0.540",
+    "@remotion/shapes": "4.0.540",
+    "@remotion/transitions": "4.0.540",
+    "react": "19",
+    "react-dom": "19",
+    "remotion": "4.0.540"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
