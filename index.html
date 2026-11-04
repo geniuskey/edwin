@@ -15,19 +15,6 @@
 <style>
   html, body { margin: 0; height: 100%; background: #05070c; overflow: hidden; }
   video { width: 100vw; height: 100vh; object-fit: contain; display: block; background: #05070c; }
-  #gate {
-    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    flex-direction: column; gap: 14px; cursor: pointer;
-    background: rgba(5, 7, 12, 0.55); color: #f5f7fb;
-    font: 600 16px/1.4 ui-monospace, Menlo, Consolas, monospace; text-align: center;
-  }
-  #gate.on { display: flex; }
-  #gate .play {
-    width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center;
-    border: 2px solid #ffd43b; color: #ffd43b; font-size: 40px; padding-left: 6px; box-sizing: border-box;
-    animation: pulse 1.6s ease-in-out infinite;
-  }
-  @keyframes pulse { 50% { transform: scale(1.08); box-shadow: 0 0 32px rgba(255, 212, 59, 0.45); } }
   #ctl { position: fixed; right: 20px; bottom: 20px; display: flex; gap: 8px; transition: opacity .4s; }
   #ctl.hide { opacity: 0; pointer-events: none; }
   #ctl button {
@@ -41,67 +28,45 @@
 </head>
 <body>
 <video id="v" src="edwin.mp4" poster="poster.jpg" autoplay loop playsinline preload="auto"></video>
-<div id="gate" role="button" aria-label="소리와 함께 재생">
-  <div class="play">▶</div>
-  <div>클릭하거나 아무 키나 누르면<br>소리와 함께 재생됩니다</div>
-</div>
 <div id="ctl" class="hide">
   <button id="snd" type="button">소리 끄기</button>
 </div>
 <script>
   const v = document.getElementById('v');
-  const gate = document.getElementById('gate');
   const ctl = document.getElementById('ctl');
   const snd = document.getElementById('snd');
 
   const syncUi = () => { snd.textContent = v.muted ? '소리 켜기' : '소리 끄기'; };
-
-  let started = false;
   let idle;
-  function hideSoon() {
+  function showCtl() {
+    ctl.classList.remove('hide');
     clearTimeout(idle);
     idle = setTimeout(() => ctl.classList.add('hide'), 2500);
   }
-  function begin() {
-    started = true;
-    gate.classList.remove('on');
-    ctl.classList.remove('hide');
-    syncUi();
-    hideSoon();
-  }
 
-  // Try sound-on autoplay. If the browser blocks it, play muted and
-  // unmute (from the start) on the first click / tap / key press.
+  // Play with sound right away. If the browser blocks sound-on autoplay,
+  // play muted and quietly unmute on the first click / tap / key press.
   v.muted = false;
-  v.play().then(begin).catch(() => {
+  v.play().then(syncUi).catch(() => {
     v.muted = true;
     v.play().catch(() => {});
     syncUi();
-    gate.classList.add('on');
-  });
-
-  ['pointerdown', 'keydown', 'touchend'].forEach((t) =>
-    window.addEventListener(t, (e) => {
-      if (started || ctl.contains(e.target)) return;
+    const unmute = (e) => {
+      ['pointerdown', 'keydown', 'touchend'].forEach((t) => window.removeEventListener(t, unmute, true));
+      if (ctl.contains(e.target)) return;
       v.muted = false;
-      v.currentTime = 0;
       v.play().catch(() => {});
-      begin();
-    }, { capture: true })
-  );
+      syncUi();
+    };
+    ['pointerdown', 'keydown', 'touchend'].forEach((t) => window.addEventListener(t, unmute, true));
+  });
 
   snd.addEventListener('click', () => {
     v.muted = !v.muted;
     if (!v.muted) v.play().catch(() => {});
     syncUi();
   });
-
-  // Auto-hide controls while idle.
-  window.addEventListener('mousemove', () => {
-    if (!started) return;
-    ctl.classList.remove('hide');
-    hideSoon();
-  });
+  window.addEventListener('mousemove', showCtl);
 </script>
 </body>
 </html>
