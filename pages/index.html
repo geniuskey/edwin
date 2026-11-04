@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDWIN</title>
+<meta name="description" content="EDWIN — motion graphics profile reveal">
+<meta property="og:title" content="EDWIN">
+<meta property="og:description" content=">>> import edwin">
+<meta property="og:type" content="video.other">
+<meta property="og:url" content="https://geniuskey.github.io/edwin/">
+<meta property="og:image" content="https://geniuskey.github.io/edwin/poster.jpg">
+<meta property="og:video" content="https://geniuskey.github.io/edwin/edwin.mp4">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  html, body { margin: 0; height: 100%; background: #05070c; overflow: hidden; }
+  video { width: 100vw; height: 100vh; object-fit: contain; display: block; background: #05070c; }
+  #gate {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; cursor: pointer;
+    background: rgba(5, 7, 12, 0.55); color: #f5f7fb;
+    font: 600 16px/1.4 ui-monospace, Menlo, Consolas, monospace; text-align: center;
+  }
+  #gate.on { display: flex; }
+  #gate .play {
+    width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center;
+    border: 2px solid #ffd43b; color: #ffd43b; font-size: 40px; padding-left: 6px; box-sizing: border-box;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { transform: scale(1.08); box-shadow: 0 0 32px rgba(255, 212, 59, 0.45); } }
+  #ctl { position: fixed; right: 20px; bottom: 20px; display: flex; gap: 8px; transition: opacity .4s; }
+  #ctl.hide { opacity: 0; pointer-events: none; }
+  #ctl button {
+    padding: 10px 16px;
+    font: 600 14px/1 ui-monospace, Menlo, Consolas, monospace; color: #f5f7fb;
+    background: rgba(10, 18, 34, 0.7); border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px; cursor: pointer; backdrop-filter: blur(8px);
+  }
+  #ctl button:hover { border-color: #ffd43b; color: #ffd43b; }
+</style>
+</head>
+<body>
+<video id="v" src="edwin.mp4" poster="poster.jpg" autoplay loop playsinline preload="auto"></video>
+<div id="gate" role="button" aria-label="전체화면으로 소리와 함께 재생">
+  <div class="play">▶</div>
+  <div>클릭하거나 아무 키나 누르면<br>전체화면 + 소리로 재생됩니다</div>
+</div>
+<div id="ctl" class="hide">
+  <button id="snd" type="button">소리 끄기</button>
+  <button id="fs" type="button">전체화면</button>
+</div>
+<script>
+  const v = document.getElementById('v');
+  const gate = document.getElementById('gate');
+  const ctl = document.getElementById('ctl');
+  const snd = document.getElementById('snd');
+  const fsBtn = document.getElementById('fs');
+  const root = document.documentElement;
+
+  const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function enterFs() {
+    if (isFs()) return;
+    const req = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (req) {
+      Promise.resolve(req.call(root, { navigationUI: 'hide' })).catch(() => {});
+    } else if (v.webkitEnterFullscreen) {
+      try { v.webkitEnterFullscreen(); } catch (e) {} // iPhone Safari
+    }
+  }
+  function exitFs() {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit && isFs()) Promise.resolve(exit.call(document)).catch(() => {});
+  }
+  function syncUi() {
+    snd.textContent = v.muted ? '소리 켜기' : '소리 끄기';
+    fsBtn.textContent = isFs() ? '전체화면 종료' : '전체화면';
+  }
+
+  // Browsers only allow fullscreen (and often sound) after a user gesture.
+  // So: try sound-on autoplay + fullscreen right away; whatever is blocked
+  // happens on the first click / tap / key press anywhere on the page.
+  let started = false;
+  let idle;
+  function start() {
+    if (started) return;
+    started = true;
+    gate.classList.remove('on');
+    ctl.classList.remove('hide');
+    if (v.muted) { v.muted = false; v.currentTime = 0; }
+    v.play().catch(() => {});
+    enterFs();
+    syncUi();
+    idle = setTimeout(() => ctl.classList.add('hide'), 2500);
+  }
+
+  v.muted = false;
+  v.play().then(() => {
+    // Sound-on autoplay allowed. Fullscreen still needs a gesture.
+    syncUi();
+    gate.classList.add('on');
+    gate.querySelector('div:last-child').innerHTML = '클릭하거나 아무 키나 누르면<br>전체화면으로 재생됩니다';
+  }).catch(() => {
+    // Blocked: play muted in the background until the first gesture.
+    v.muted = true;
+    v.play().catch(() => {});
+    syncUi();
+    gate.classList.add('on');
+  });
+  enterFs(); // works only where the browser permits it without a gesture
+
+  ['pointerdown', 'keydown', 'touchend'].forEach((t) =>
+    window.addEventListener(t, (e) => {
+      if (started || ctl.contains(e.target)) return;
+      start();
+    }, { capture: true })
+  );
+
+  snd.addEventListener('click', () => {
+    v.muted = !v.muted;
+    if (!v.muted) v.play().catch(() => {});
+    syncUi();
+  });
+  fsBtn.addEventListener('click', () => { isFs() ? exitFs() : enterFs(); });
+  v.addEventListener('dblclick', () => { isFs() ? exitFs() : enterFs(); });
+  document.addEventListener('fullscreenchange', syncUi);
+  document.addEventListener('webkitfullscreenchange', syncUi);
+
+  // Auto-hide controls while idle.
+  window.addEventListener('mousemove', () => {
+    if (!started) return;
+    ctl.classList.remove('hide');
+    clearTimeout(idle);
+    idle = setTimeout(() => ctl.classList.add('hide'), 2500);
+  });
+</script>
+</body>
+</html>
