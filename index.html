@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDWIN</title>
+<meta name="description" content="EDWIN — motion graphics profile reveal">
+<meta property="og:title" content="EDWIN">
+<meta property="og:description" content=">>> import edwin">
+<meta property="og:type" content="video.other">
+<meta property="og:url" content="https://geniuskey.github.io/edwin/">
+<meta property="og:image" content="https://geniuskey.github.io/edwin/poster.jpg">
+<meta property="og:video" content="https://geniuskey.github.io/edwin/edwin.mp4">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  html, body { margin: 0; height: 100%; background: #05070c; overflow: hidden; }
+  video { width: 100vw; height: 100vh; object-fit: contain; display: block; }
+  button {
+    position: fixed; right: 20px; bottom: 20px; padding: 10px 16px;
+    font: 600 14px/1 ui-monospace, Menlo, Consolas, monospace; color: #f5f7fb;
+    background: rgba(10, 18, 34, 0.7); border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px; cursor: pointer; backdrop-filter: blur(8px);
+  }
+  button:hover { border-color: #ffd43b; color: #ffd43b; }
+</style>
+</head>
+<body>
+<video id="v" src="edwin.mp4" poster="poster.jpg" autoplay muted loop playsinline></video>
+<button id="b" type="button">소리 켜기</button>
+<script>
+  const v = document.getElementById('v');
+  const b = document.getElementById('b');
+  b.addEventListener('click', () => {
+    v.muted = !v.muted;
+    if (!v.muted) { v.currentTime = 0; v.play(); }
+    b.textContent = v.muted ? '소리 켜기' : '소리 끄기';
+  });
+</script>
+</body>
+</html>
