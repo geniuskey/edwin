@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDWIN</title>
+<meta name="description" content="EDWIN — motion graphics profile reveal">
+<meta property="og:title" content="EDWIN">
+<meta property="og:description" content=">>> import edwin">
+<meta property="og:type" content="video.other">
+<meta property="og:url" content="https://geniuskey.github.io/edwin/">
+<meta property="og:image" content="https://geniuskey.github.io/edwin/poster.jpg">
+<meta property="og:video" content="https://geniuskey.github.io/edwin/edwin.mp4">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  html, body { margin: 0; height: 100%; background: #05070c; overflow: hidden; }
+  video { width: 100vw; height: 100vh; object-fit: contain; display: block; background: #05070c; }
+  #ctl { position: fixed; right: 20px; bottom: 20px; display: flex; gap: 8px; transition: opacity .4s; }
+  #ctl.hide { opacity: 0; pointer-events: none; }
+  #ctl button {
+    padding: 10px 16px;
+    font: 600 14px/1 ui-monospace, Menlo, Consolas, monospace; color: #f5f7fb;
+    background: rgba(10, 18, 34, 0.7); border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px; cursor: pointer; backdrop-filter: blur(8px);
+  }
+  #ctl button:hover { border-color: #ffd43b; color: #ffd43b; }
+</style>
+</head>
+<body>
+<video id="v" src="edwin.mp4" poster="poster.jpg" autoplay loop playsinline preload="auto"></video>
+<div id="ctl" class="hide">
+  <button id="snd" type="button">소리 끄기</button>
+</div>
+<script>
+  const v = document.getElementById('v');
+  const ctl = document.getElementById('ctl');
+  const snd = document.getElementById('snd');
+
+  const syncUi = () => { snd.textContent = v.muted ? '소리 켜기' : '소리 끄기'; };
+  let idle;
+  function showCtl() {
+    ctl.classList.remove('hide');
+    clearTimeout(idle);
+    idle = setTimeout(() => ctl.classList.add('hide'), 2500);
+  }
+
+  // Play with sound right away. If the browser blocks sound-on autoplay,
+  // play muted and quietly unmute on the first click / tap / key press.
+  v.muted = false;
+  v.play().then(syncUi).catch(() => {
+    v.muted = true;
+    v.play().catch(() => {});
+    syncUi();
+    const unmute = (e) => {
+      ['pointerdown', 'keydown', 'touchend'].forEach((t) => window.removeEventListener(t, unmute, true));
+      if (ctl.contains(e.target)) return;
+      v.muted = false;
+      v.play().catch(() => {});
+      syncUi();
+    };
+    ['pointerdown', 'keydown', 'touchend'].forEach((t) => window.addEventListener(t, unmute, true));
+  });
+
+  snd.addEventListener('click', () => {
+    v.muted = !v.muted;
+    if (!v.muted) v.play().catch(() => {});
+    syncUi();
+  });
+  window.addEventListener('mousemove', showCtl);
+</script>
+</body>
+</html>
